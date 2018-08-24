@@ -46,8 +46,13 @@
   (lcal defs body)
   ;;;;;;;;;;;;;;;
   ;; definiciones para  clases
-  (fld id body)
-  (mthd m params body)
+  
+  (class expr members)
+  (New o)
+  (Set expr1 id expr2)
+  (Get expr id)
+  (Send expr1 id expr2)
+  
   )
 
 ;; values
@@ -58,6 +63,10 @@
 (deftype Def
   (my-def id expr))
 
+(deftype Member
+  (fld id body)
+  (mthd m params body)
+  )
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #|
@@ -133,7 +142,9 @@ Este método no crea un nuevo ambiente.
     [(list 'if c t f) (my-if (parse c)
                              (parse t)
                              (parse f))]
-    [(list 'new o) (new o)]
+    [(list 'new o) (New o)]
+    [(list 'get e id) (Get e id)]
+    [(list 'send expr1 id expr2 ...) (Send expr1 id (map parse expr2))]
     [(list 'seqn e1 e2) (seqn (parse e1) (parse e2))]    
     [(list 'local (list e ...)  b)
      (lcal (map parse-def e) (parse b))]
@@ -143,16 +154,14 @@ Este método no crea un nuevo ambiente.
 ;; parse-def :: s-expr -> Def
 (define (parse-def s-expr)
   (match s-expr
-    [(list 'define id  (list 'class body ...)) (parse-member body '() '())]
+    [(list 'define id  (list 'class body ...))(displayln body)(class id (map parse-member body))]
     [(list 'define id b) (my-def id (parse b))]))
 
-;; parse-member:: s-expr-> class object
-(define (parse-member s-expr fields methods)
+;; parse-member:: s-expr-> Member
+(define (parse-member s-expr)
  (match s-expr
-   ;;['() (CLASS fields methods)]
-   [(list head tail ...) (match head
-                           [(list 'field body...) (begin (append fields head) (parse-member tail fields methods))]
-                           [(list 'method body...)(begin (append methods tail)(parse-member tail fields methods))])]
+   [(list 'field f init) (fld f init )]
+   [(list 'method m params body)(mthd m params body)]
   ))
 ;; interp :: Expr Env -> Val
 (define (interp expr env)
@@ -250,7 +259,6 @@ valores de MiniScheme para clases y objetos
 (defmac (! fd v) #:captures self
   ((obj-class self) 'write self 'fd v))
 
-(define (new c)
-  (c 'create))
+;(define (new c) (c 'create))
 
 (define-struct obj (class values))
