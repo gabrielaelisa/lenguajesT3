@@ -47,12 +47,12 @@
   ;;;;;;;;;;;;;;;
   ;; definiciones para  clases
   
-  (class members)
-  (new o)
-  (set expr1 id expr2)
-  (get expr id)
-  (send expr1 id expr2)
-  (this)
+  (my-class members)
+  (my-new o)
+  (my-set expr1 id expr2)
+  (my-get expr id)
+  (my-send obj m expr)
+  (my-this)
   
   )
 
@@ -72,7 +72,8 @@
 ;;;auxiliary type
 (deftype Group
   (group flds mthds))
-        
+
+(define-struct obj (class values))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #|
@@ -154,12 +155,12 @@ Este método no crea un nuevo ambiente.
     [(list 'if c t f) (my-if (parse c)
                              (parse t)
                              (parse f))]
-    [(list 'class member ...) (class (map parse-member member)) ]
-    [(list 'this) (this)]
-    [(list 'new o) (new o)]
-    [(list 'set expr1 id expr2) (set expr1 id expr2)]
-    [(list 'get e id) (get (parse e) id)]
-    [(list 'send expr1 id expr2 ...) (send expr1 id (map parse expr2))]
+    [(list 'class member ...) (my-class (map parse-member member)) ]
+    [(list 'this) (my-this)]
+    [(list 'new o) (my-new o)]
+    [(list 'set expr1 id expr2) (my-set expr1 id expr2)]
+    [(list 'get e id) (my-get (parse e) id)]
+    [(list 'send expr1 id expr2 ...) (my-send expr1 id (map parse expr2))]
     [(list 'seqn e1 e2) (seqn (parse e1) (parse e2))]    
     [(list 'local (list e ...)  b)
      (lcal (map parse-def e) (parse b))]
@@ -189,8 +190,12 @@ Este método no crea un nuevo ambiente.
     [(seqn expr1 expr2) (begin 
                           (interp expr1 env)
                           (interp expr2 env))]
-    [(new o) ((env-lookup o env) 'create)]
-    [(class members) (def (group fields methods)
+    
+    [(my-send o m expr)((obj-class (env-lookup o env)) 'invoke o 'm
+                                                       (map (λ (e) (interp e env)) expr))]
+    [(my-new o) ((env-lookup o env) 'create)]
+    
+    [(my-class members) (def (group fields methods)
                      (separate-members members '() '() ))
                        (letrec
                            ([class
@@ -199,13 +204,15 @@ Este método no crea un nuevo ambiente.
                                     [(create)
                                      (make-obj class
                                                (make-hash fields))]
-                                    [(read)
+                                    #;[(read)
                                      (dict-ref (obj-values (first vals)) (second vals))]
-                                    [(write)
+                                    #;[(write)
                                      (dict-set! (obj-values (first vals)) (second vals) (third vals))]
                                     [(invoke)
+                                     ;(displayln (second vals))
+                                     (displayln (cdr (assoc (second vals) methods)))
                                      (if (assoc (second vals) methods)
-                                         (apply ((cdr (assoc (second vals) methods)) (first vals)) (cddr vals))
+                                         (apply (cdr (assoc (second vals) methods)) (cddr vals))
                                          (error "message not understood"))]))])
                          class)
 
@@ -220,14 +227,15 @@ Este método no crea un nuevo ambiente.
      ]
     ))
 
-;;separate-members:: list<member> -> list<field> list<methods>
+;;separate-members:: list<Member> '() '() -> (Group list<fld> list<mthd>)
 (define (separate-members mem acc_f acc_m)
   (match mem
     ['() (group acc_f acc_m)]
     [(list head tail ...)
      (match head
-       [(fld id body) (separate-members tail (append acc_f (list head)) acc_m) ]
-       [(mthd m params body) (separate-members tail acc_f (append acc_m (list head)))])]))
+       [(fld id body) (separate-members tail (cons (cons id body) acc_f) acc_m) ]
+       [(mthd m params body) (separate-members tail acc_f (append (list (cons 'm (λ params body))) acc_m))])
+     ]))
 
 ;; open-val :: Val -> Scheme Value
 (define (open-val v)
@@ -266,30 +274,6 @@ valores de MiniScheme para clases y objetos
 
 ;;;;;;;;;;;;;;;;; TAREA 3;;;;;;;;;;;;
 
-;Macros de OOPLAI
-(defmac (CLASS ([field f init] ...)
-               ([method m params body] ...))
-     #:keywords field method
-     #:captures self
-     (let ([methods (list (cons 'm (λ (self)
-                                     (λ params body))) ...)])
-       (letrec
-           ([class
-                (λ (msg . vals)
-                  (case msg
-                    [(create)
-                     (make-obj class
-                               (make-hash (list (cons 'f init) ...)))]
-                    [(read)
-                     (dict-ref (obj-values (first vals)) (second vals))]
-                    [(write)
-                     (dict-set! (obj-values (first vals)) (second vals) (third vals))]
-                    [(invoke)
-                     (if (assoc (second vals) methods)
-                         (apply ((cdr (assoc (second vals) methods)) (first vals)) (cddr vals))
-                         (error "message not understood"))]))])
-         class)))
-
 (defmac (-> o m arg ...)
   (let ((obj o))
     ((obj-class obj) 'invoke obj 'm arg ...)))
@@ -300,5 +284,3 @@ valores de MiniScheme para clases y objetos
   ((obj-class self) 'write self 'fd v))
 
 ;(define (new c) (c 'create))
-
-(define-struct obj (class values))

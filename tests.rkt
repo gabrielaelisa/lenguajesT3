@@ -23,3 +23,9 @@
 ;                                  SUS TESTS                                  ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+(test (run-val '(local
+             [(define O (class
+                          (field x 1)
+                          (method identidad (x) x)))
+              (define o (new O))] (send o identidad 1))) 1)
