@@ -68,6 +68,11 @@
   (fld id body)
   (mthd m params body)
   )
+
+;;;auxiliary type
+(deftype Group
+  (group flds mthds))
+        
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 #|
@@ -128,12 +133,12 @@ Este método no crea un nuevo ambiente.
 
 ;; parse :: s-expr -> Expr
 (define (parse s-expr)
-  ;; parse-member:: s-expr-> Member
-(define (parse-member s-expr)
- (match s-expr
-   [(list 'field f init) (fld f init )]
-   [(list 'method m params body)(mthd m params (parse body))]
-   ))
+   ;; parse-member:: s-expr-> Member
+  (define (parse-member s-expr)
+    (match s-expr
+      [(list 'field f init) (fld f init )]
+      [(list 'method m params body)(mthd m params (parse body))]
+      ))
   (match s-expr
     [(? number?) (num s-expr)]
     [(? symbol?) (id s-expr)]    
@@ -184,7 +189,27 @@ Este método no crea un nuevo ambiente.
     [(seqn expr1 expr2) (begin 
                           (interp expr1 env)
                           (interp expr2 env))]
-    [(class members) 'i]
+    [(new o) ((env-lookup o env) 'create)]
+    [(class members) (def (group fields methods)
+                     (separate-members members '() '() ))
+                       (letrec
+                           ([class
+                                (λ (msg . vals)
+                                  (case msg
+                                    [(create)
+                                     (make-obj class
+                                               (make-hash fields))]
+                                    [(read)
+                                     (dict-ref (obj-values (first vals)) (second vals))]
+                                    [(write)
+                                     (dict-set! (obj-values (first vals)) (second vals) (third vals))]
+                                    [(invoke)
+                                     (if (assoc (second vals) methods)
+                                         (apply ((cdr (assoc (second vals) methods)) (first vals)) (cddr vals))
+                                         (error "message not understood"))]))])
+                         class)
+
+                    ]
     [(lcal defs body)
      (let* ([new-env (multi-extend-env '() '() env)])
        (for-each (λ(x)
@@ -194,6 +219,15 @@ Este método no crea un nuevo ambiente.
        (interp body new-env))     
      ]
     ))
+
+;;separate-members:: list<member> -> list<field> list<methods>
+(define (separate-members mem acc_f acc_m)
+  (match mem
+    ['() (group acc_f acc_m)]
+    [(list head tail ...)
+     (match head
+       [(fld id body) (separate-members tail (append acc_f (list head)) acc_m) ]
+       [(mthd m params body) (separate-members tail acc_f (append acc_m (list head)))])]))
 
 ;; open-val :: Val -> Scheme Value
 (define (open-val v)
