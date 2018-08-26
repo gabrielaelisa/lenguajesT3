@@ -23,6 +23,24 @@
 ;                                  SUS TESTS                                  ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;; tests for get
+
+(test (run-val '(local
+             [(define Point (class
+                          (field x 1)
+                          (field y 1)))
+              (define p (new Point))] (get p x))) 1)
+
+
+;;; tests for set
+
+(test (run-val '(local
+             [(define Point (class
+                          (field x 1)
+                          (field y 1)))
+              (define p (new Point))] (seqn (set p x 2) (get p x)))) 2)
+
+;;; tests for send
 
 (test (run-val '(local
              [(define O (class

@@ -158,7 +158,7 @@ Este método no crea un nuevo ambiente.
     [(list 'class member ...) (my-class (map parse-member member)) ]
     [(list 'this) (my-this)]
     [(list 'new o) (my-new o)]
-    [(list 'set expr1 id expr2) (my-set expr1 id expr2)]
+    [(list 'set expr1 id expr2) (my-set (parse expr1) id expr2)]
     [(list 'get e id) (my-get (parse e) id)]
     [(list 'send expr1 id expr2 ...) (my-send expr1 id (map parse expr2))]
     [(list 'seqn e1 e2) (seqn (parse e1) (parse e2))]    
@@ -190,8 +190,12 @@ Este método no crea un nuevo ambiente.
     [(seqn expr1 expr2) (begin 
                           (interp expr1 env)
                           (interp expr2 env))]
+    [(my-this) 'this]
     
-    [(my-send o m expr)((obj-class (env-lookup o env)) 'invoke o 'm
+    [(my-set obj field val) ((obj-class (interp obj env)) 'write (interp obj env) field val)]
+    
+    [(my-get obj field) ((obj-class (interp obj env)) 'read (interp obj env) field) ]
+    [(my-send obj m expr)((obj-class (env-lookup obj env)) 'invoke obj 'm
                                                        (map (λ (e) (interp e env)) expr))]
     [(my-new o) ((env-lookup o env) 'create)]
     
@@ -204,13 +208,12 @@ Este método no crea un nuevo ambiente.
                                     [(create)
                                      (make-obj class
                                                (make-hash fields))]
-                                    #;[(read)
+                                    [(read)
                                      (dict-ref (obj-values (first vals)) (second vals))]
-                                    #;[(write)
+                                    [(write)
                                      (dict-set! (obj-values (first vals)) (second vals) (third vals))]
                                     [(invoke)
                                      ;(displayln (second vals))
-                                     (displayln (cdr (assoc (second vals) methods)))
                                      (if (assoc (second vals) methods)
                                          (apply (cdr (assoc (second vals) methods)) (cddr vals))
                                          (error "message not understood"))]))])
