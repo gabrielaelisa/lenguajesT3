@@ -211,11 +211,28 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;P2
+;      P2
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
-;;;; testings parte 1
+; testings parte 1
+
+; testing Object
+(test/exn (run-val '(local
+              [(define a (class
+                              (method f (z) (< z 7))))
+               (define b (class <: a))
+               (define c (new b))]
+              (send c x 0)))
+"method not found")
+
+(test/exn (run-val '(local
+              [(define a (class
+                              (method f (z) (< z 7))))
+               (define b (class <: Object))
+               (define c (new b))]
+              (send c z 0)))
+"method not found")
 
 ; enunciado
 (test (run-val '(local
@@ -223,5 +240,64 @@
                               (method f (z) (< z 7))))
                (define c (class <: c1))
                (define o (new c))]
-              (send o f 20)))
-#f)
+              (send o f 20))) #f)
+
+; otros testings
+
+(test (run-val '(local
+              [(define c1 (class
+                              (method f (z) (< z 7))))
+               (define c (class <: c1
+                              (field x 10)
+                              (method f () (get this x))))
+               (define o (new c))]
+              (send o f)))10)
+
+
+(test (run-val '(local
+              [(define c1 (class
+                              (method f (z) (< z 7))))
+               (define c (class <: c1
+                              (field x 10)
+                              (method f (z) (* (get this x) z))))
+               (define o (new c))]
+              (send o f 5))) 50)
+
+
+;funciona sin field shadowing
+#;(test (run-val '(local
+              [(define c1 (class
+                              (field x 3)
+                              (method f () (get this x))))
+               (define c (class <: c1
+                              (field x 10)
+                              (method x (z) (* (get this x) z))))
+               (define o (new c))]
+              (send o f))) 10)
+
+; parte 2
+
+;; llamada a super de metodo no definido en el padre directo
+(test (run-val '(local
+          [(define c2 (class
+                          (method h (x) (+ x 1))))
+           (define c1 (class <: c2
+                        (method f () #f)))
+           (define c (class <: c1                       
+                       (method g () (super h 10))))
+           (define o (new c))]
+          (send o g))) 11)
+
+
+(test (run-val '(local
+          [(define c2 (class
+                          (field x 7)
+                          (method h () (get this x))))
+           (define c1 (class <: c2
+                        (method f () #f)))
+           (define c (class <: c1                       
+                       (method g () (super h ))))
+           (define o (new c))]
+          (send o g))) 7)
+
+

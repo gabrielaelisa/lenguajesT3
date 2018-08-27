@@ -53,6 +53,7 @@
   (my-get expr id)
   (my-send obj m expr)
   (my-this)
+  (my-super id exprs)
   
   )
 
@@ -158,6 +159,7 @@ Este método no crea un nuevo ambiente.
     [(list 'if c t f) (my-if (parse c)
                              (parse t)
                              (parse f))]
+    [(list 'super id exprs ...) (my-super id (map parse exprs))]
     [(list 'class '<: sc-name member ...) (my-class (parse sc-name) (map parse-member member))]
     [(list 'class member ...) (my-class (id 'Object) (map parse-member member)) ]
     [(list 'new o) (my-new (parse o))]
@@ -211,6 +213,11 @@ Este método no crea un nuevo ambiente.
                                                'write (interp objc env) field (closureV val env))]
     
     [(my-get objc field) ((obj-class (interp objc env)) 'read (interp objc env) field)]
+
+    [(my-super m expr) (def superclass (interp (id 'super) env))
+                         (superclass  'invoke superclass m
+                                                       (map (λ (e) (interp e env)) expr))
+                         ]
     
     [(my-send objc m expr)((obj-class (interp objc env)) 'invoke (interp objc env) m
                                                        (map (λ (e) (interp e env)) expr))]
@@ -242,8 +249,8 @@ Este método no crea un nuevo ambiente.
                                       (let ((method (class 'lookup (second vals))))
                                         (match method
                                          [(list params body)(interp body
-                                            (multi-extend-env (append (list 'this) params)
-                                             (append(list (first vals)) (car(cddr vals))) env))]))]
+                                            (multi-extend-env (append (list 'this 'super) params)
+                                             (append(list (first vals) my-sc) (car(cddr vals))) env))]))]
                                       
           
 
@@ -308,16 +315,3 @@ valores de MiniScheme para clases y objetos
     [(numV n) n]
     [(boolV b) b]
     [x x]))
-
-;;;;;;;;;;;;;;;;; TAREA 3;;;;;;;;;;;;
-
-(defmac (-> o m arg ...)
-  (let ((obj o))
-    ((obj-class obj) 'invoke obj 'm arg ...)))
-(defmac (? fd) #:captures self
-  ((obj-class self) 'read self 'fd))
- 
-(defmac (! fd v) #:captures self
-  ((obj-class self) 'write self 'fd v))
-
-;(define (new c) (c 'create))
