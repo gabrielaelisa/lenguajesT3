@@ -59,7 +59,8 @@
 ;; values
 (deftype Val
   (numV n)
-  (boolV b))
+  (boolV b)
+  (closureV val env))
 
 (deftype Def
   (my-def id expr))
@@ -137,7 +138,7 @@ Este método no crea un nuevo ambiente.
    ;; parse-member:: s-expr-> Member
   (define (parse-member s-expr)
     (match s-expr
-      [(list 'field f init) (fld f  init)]
+      [(list 'field f init) (fld f (parse init))]
       [(list 'method m params body)(mthd m params (parse body))]
       ))
   (match s-expr
@@ -202,9 +203,9 @@ Este método no crea un nuevo ambiente.
                           (interp expr2 env))]
     [(my-this) (env-lookup (interp (id 'this) env) env)]
     
-    [(my-set objc field val) ((obj-class (interp objc env)) 'write (interp objc env) field (interp val env))]
+    [(my-set objc field val) ((obj-class (interp objc env)) 'write (interp objc env) field (closureV val env))]
     
-    [(my-get objc field) ((obj-class (interp objc env)) 'read (interp objc env) field) ]
+    [(my-get objc field) ((obj-class (interp objc env)) 'read (interp objc env) field)]
     
     [(my-send objc m expr)((obj-class (env-lookup objc env)) 'invoke objc m
                                                        (map (λ (e) (interp e env)) expr))]
@@ -220,11 +221,14 @@ Este método no crea un nuevo ambiente.
                                      (make-obj class
                                                (make-hash fields))]
                                     [(read)
-                                     (dict-ref (obj-values (first vals)) (second vals))]
+                                     ;interpretar el field con multienv extendido
+                                     (match (dict-ref (obj-values (first vals)) (second vals))
+                                       [(closureV val my-env) (interp val my-env)]
+                                       [ some (interp some env)])
+                                     ]
                                     [(write)
                                      (dict-set! (obj-values (first vals)) (second vals) (third vals))]
                                     [(invoke)
-                                     ;(displayln (assoc (second vals) methods))
                                      (if (assoc (second vals) methods)
                                           (match  (cdr (assoc (second vals) methods))
                                             [(list params body)(interp body
@@ -250,7 +254,7 @@ Este método no crea un nuevo ambiente.
 (define (open-val v)
   
   (match v
-    [(numV n) (displayln n) n]
+    [(numV n) n]
     [(boolV b) b]
     ))
 
