@@ -157,7 +157,7 @@
 
 ;;; test por componentes
 
-(test (run-val '(local
+#;(test (run-val '(local
               [(define A
                  (class
                      (method apply (c)
