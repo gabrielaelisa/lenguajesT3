@@ -199,4 +199,12 @@
 
 ;;; testeo de errores
 
+(test/exn (run-val '(local
+               [(define printer (class
+                          (method print () 1)))
+              (define pr (new printer))] (send pr pritt))) "method not found")
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;P2
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
