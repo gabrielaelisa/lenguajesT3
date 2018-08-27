@@ -44,8 +44,8 @@
              [(define Point (class
                           (field x 1)
                           (field y 2)
-                          (method swap () (define aux (get this x)) (set this x (get this y)) (set this y aux))))
-              (define p (new Point))] (seqn (send p swap '()) (get p x)))) 2)
+                          (method swap () (set this x (get this y)))))
+              (define p (new Point))] (seqn (send p swap) (get p x)))) 2)
 
 
 ;; tests for this
@@ -54,7 +54,7 @@
              [(define O (class
                           (field x 1)
                           (method identidad () (get this x))))
-              (define obj (new O))] (send obj identidad))) 1)
+              (define o1 (new O))] (send o1 identidad))) 1)
 
 ;;; tests for send
 
