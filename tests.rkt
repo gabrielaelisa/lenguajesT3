@@ -127,7 +127,7 @@
              (send o sum 3))) 6)
 
 
-;;; test enunciado
+;;; test enunciado 1
 (test (run-val '(local
              [(define c (class
                             (field x 1)
@@ -157,7 +157,7 @@
 
 ;;; test por componentes
 
-#;(test (run-val '(local
+(test (run-val '(local
               [(define A
                  (class
                      (method apply (c)
@@ -167,9 +167,7 @@
                                 (method m () 1))))) 1)
 
 ;;; test enunciado 2
-
-
-#;(test (run-val '(local
+(test (run-val '(local
               [(define A
                  (class
                      (method apply (c)
