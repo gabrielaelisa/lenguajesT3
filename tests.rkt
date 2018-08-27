@@ -23,6 +23,8 @@
 ;                                  SUS TESTS                                  ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+
+;;;;;;;;;; tests P1;;;;;;;;;;;;;;;
 ;;; tests for get
 
 (test (run-val '(local
@@ -49,6 +51,13 @@
 
 
 ;; tests for this
+
+#;(test (run-val '(local
+             [(define Y (class
+                          (field x 1)
+                          (field y (get this x))
+                          (method  get-y () (get this y))))
+              (define c (new Y))] (send c get-y))) 1)
 
 (test (run-val '(local
              [(define O (class
@@ -89,13 +98,13 @@
              [(define O (class
                           (field x 1)
                           (method identidad (x) x)))
-              (define o (new O))] (send o identidad 1))) 1)
+              (define ob (new O))] (send ob identidad 1))) 1)
 
 (test (run-val '(local
              [(define O (class
                           (field x 1)
                           (method identidad (x y) x)))
-              (define o (new O))] (send o identidad 1 2))) 1)
+              (define ob (new O))] (send ob identidad 1 2))) 1)
 
 ;test por componentes
 (test (run-val '(local
@@ -129,3 +138,44 @@
              (seqn
               (send o set-x (+ 1 3))
               (+ (send o sum 3) (get o y))))) 11)
+
+
+;;; test las clases son valores
+
+(test (run-val '(local
+              [(define A
+                 (class
+                     (field x 5)
+                     (method sub-y (y) (- (get this x) y))))
+               (define a (new A))
+               (define B
+                 (class
+                     (field y 5)))
+               (define b (new B))
+                     ]
+              (send a sub-y (get b y)))) 0)
+
+;;; test por componentes
+
+(test (run-val '(local
+              [(define A
+                 (class
+                     (method apply (c)
+                             (send (new c) m))))
+               (define ins (new A))]
+              (send ins apply (class 
+                                (method m () 1))))) 1)
+
+;;; test enunciado 2
+
+
+#;(test (run-val '(local
+              [(define A
+                 (class
+                     (method apply (c)
+                             (send (new c) m))))
+               (define ins (new A))]
+              (send ins apply (class
+                                (field x 2) 
+                                (method m () (get this x))))))
+2)
