@@ -204,6 +204,11 @@
                           (method print () 1)))
               (define pr (new printer))] (send pr pritt))) "method not found")
 
+(test/exn (run-val '(local
+               [(define printer (class
+                          (method print () 1)))
+              (define pr (new printer))] (get pr x))) "field not found")
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;P2

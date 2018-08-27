@@ -47,7 +47,7 @@
   ;;;;;;;;;;;;;;;
   ;; definiciones para  clases
   
-  (my-class members)
+  (my-class sc members)
   (my-new o)
   (my-set expr1 id expr2)
   (my-get expr id)
@@ -157,7 +157,8 @@ Este método no crea un nuevo ambiente.
     [(list 'if c t f) (my-if (parse c)
                              (parse t)
                              (parse f))]
-    [(list 'class member ...) (my-class (map parse-member member)) ]
+    [(list 'class '<: sc-name member ...) (my-class sc-name (map parse-member member))]
+    [(list 'class member ...) (my-class 'Object (map parse-member member)) ]
     [(list 'new o) (my-new (parse o))]
     [(list 'set expr1 id expr2) (my-set (parse expr1) id (parse expr2))]
     [(list 'get e id) (my-get (parse e) id)]
@@ -176,6 +177,13 @@ Este método no crea un nuevo ambiente.
 
 ;; interp :: Expr Env -> Val
 (define (interp expr env)
+  
+  (define Object
+  (λ (msg . vals)
+    (case msg
+      [(lookup) (error "method not found")]
+      [else     (error "root class: should not happen: " msg)])))
+
   ;;separate-members:: list<Member> '() '() -> (Group list<fld> list<mthd>)
   (define (separate-members mem acc_f acc_m)
     (match mem
@@ -213,7 +221,7 @@ Este método no crea un nuevo ambiente.
                                                        (map (λ (e) (interp e env)) expr))]
     [(my-new o) ((interp o env) 'create)]
     
-    [(my-class members) (def (group fields methods)
+    [(my-class sc members) (def (group fields methods)
                      (separate-members members '() '() ))
                        (letrec
                            ([class
@@ -223,11 +231,14 @@ Este método no crea un nuevo ambiente.
                                      (make-obj class
                                                (make-hash fields))]
                                     [(read)
-                                     ;interpretar el field con multienv extendido
-                                     (match (dict-ref (obj-values (first vals)) (second vals))
+                                     (let
+                                     ([dict (obj-values (first vals))]) 
+                                     (if (hash-has-key? dict (second vals))
+                                     (match (dict-ref dict (second vals))
                                        [(closureV val my-env) (interp val my-env)]
                                        [ some (interp some env)])
-                                     ]
+                                     (error "field not found")))]
+                                    
                                     [(write)
                                      (dict-set! (obj-values (first vals)) (second vals) (third vals))]
                                     [(invoke)
