@@ -56,13 +56,32 @@
                           (method identidad () (get this x))))
               (define o1 (new O))] (send o1 identidad))) 1)
 
+
+;; test class with 2 methods
+
+(test (run-val '(local
+             [(define O (class
+                          (field x 1)
+                          (field y 2)
+                          (method swap () (set this x (get this y)))
+                          (method identidad () (get this x))))
+              (define o1 (new O))] (send o1 identidad))) 1)
+
+(test (run-val '(local
+             [(define O (class
+                          (field x 1)
+                          (field y 2)
+                          (method swap () (set this x (get this y)))
+                          (method identidad () (get this x))))
+              (define o1 (new O))]  (seqn (send o1 swap) (get o1 x)))) 2)
+
 ;;; tests for send
 
 
 (test (run-val '(local
                [(define printer (class
                           (method print () 1)))
-              (define pr (new printer))] (send pr printer))) 1)
+              (define pr (new printer))] (send pr print))) 1)
 
 
 
@@ -78,3 +97,35 @@
                           (method identidad (x y) x)))
               (define o (new O))] (send o identidad 1 2))) 1)
 
+;test por componentes
+(test (run-val '(local
+             [(define c (class
+                            (field x 1)
+                          (field y 2)
+                          (method sum (z) (+ (get this x) (+ (get this y) z)))
+                          (method set-x (val) (set this x val))))
+              (define o (new c))]
+             (seqn
+              (send o set-x (+ 1 3))(get o x)))) 4)
+
+(test (run-val '(local
+             [(define c (class
+                            (field x 1)
+                          (field y 2)
+                          (method sum (z) (+ (get this x) (+ (get this y) z)))
+                          (method set-x (val) (set this x val))))
+              (define o (new c))]
+             (send o sum 3))) 6)
+
+
+;;; test enunciado
+(test (run-val '(local
+             [(define c (class
+                            (field x 1)
+                          (field y 2)
+                          (method sum (z) (+ (get this x) (+ (get this y) z)))
+                          (method set-x (val) (set this x val))))
+              (define o (new c))]
+             (seqn
+              (send o set-x (+ 1 3))
+              (+ (send o sum 3) (get o y))))) 11)
