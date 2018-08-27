@@ -213,3 +213,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;P2
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;; testings parte 1
+
+; enunciado
+(test (run-val '(local
+              [(define c1 (class
+                              (method f (z) (< z 7))))
+               (define c (class <: c1))
+               (define o (new c))]
+              (send o f 20)))
+#f)
