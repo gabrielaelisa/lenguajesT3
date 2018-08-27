@@ -40,10 +40,34 @@
                           (field y 1)))
               (define p (new Point))] (seqn (set p x 2) (get p x)))) 2)
 
+(test (run-val '(local
+             [(define Point (class
+                          (field x 1)
+                          (field y 2)
+                          (method swap () (define aux (get this x)) (set this x (get this y)) (set this y aux))))
+              (define p (new Point))] (seqn (send p swap '()) (get p x)))) 2)
+
+
+;; tests for this
+
+(test (run-val '(local
+             [(define O (class
+                          (field x 1)
+                          (method identidad () (get this x))))
+              (define obj (new O))] (send obj identidad))) 1)
+
 ;;; tests for send
+
 
 (test (run-val '(local
              [(define O (class
                           (field x 1)
                           (method identidad (x) x)))
               (define o (new O))] (send o identidad 1))) 1)
+
+(test (run-val '(local
+               [(define printer (class
+                          (method print () 1)))
+              (define pr (new printer))] (send pr printer))) 1)
+
+

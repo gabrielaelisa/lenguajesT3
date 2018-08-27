@@ -160,7 +160,7 @@ Este método no crea un nuevo ambiente.
     [(list 'new o) (my-new o)]
     [(list 'set expr1 id expr2) (my-set (parse expr1) id expr2)]
     [(list 'get e id) (my-get (parse e) id)]
-    [(list 'send expr1 id expr2 ...) (my-send expr1 id (map parse expr2))]
+    [(list 'send expr1 id expr2 ...) (my-send (parse expr1) id (map parse expr2))]
     [(list 'seqn e1 e2) (seqn (parse e1) (parse e2))]    
     [(list 'local (list e ...)  b)
      (lcal (map parse-def e) (parse b))]
@@ -190,12 +190,12 @@ Este método no crea un nuevo ambiente.
     [(seqn expr1 expr2) (begin 
                           (interp expr1 env)
                           (interp expr2 env))]
-    [(my-this) 'this]
+    [(my-this) (interp (id 'this) env)]
     
     [(my-set obj field val) ((obj-class (interp obj env)) 'write (interp obj env) field val)]
     
     [(my-get obj field) ((obj-class (interp obj env)) 'read (interp obj env) field) ]
-    [(my-send obj m expr)((obj-class (env-lookup obj env)) 'invoke obj 'm
+    [(my-send obj m expr)((obj-class (interp obj env)) 'invoke obj 'm
                                                        (map (λ (e) (interp e env)) expr))]
     [(my-new o) ((env-lookup o env) 'create)]
     
@@ -213,9 +213,10 @@ Este método no crea un nuevo ambiente.
                                     [(write)
                                      (dict-set! (obj-values (first vals)) (second vals) (third vals))]
                                     [(invoke)
-                                     ;(displayln (second vals))
+                                     ;(displayln (first vals))
                                      (if (assoc (second vals) methods)
-                                         (apply (cdr (assoc (second vals) methods)) (cddr vals))
+                                          (interp (apply (cdr (assoc (second vals) methods)) (cddr vals))
+                                                   (multi-extend-env (list 'this) (list (first vals)) env))
                                          (error "message not understood"))]))])
                          class)
 
