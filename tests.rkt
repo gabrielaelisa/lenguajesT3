@@ -23,8 +23,10 @@
 ;                                  SUS TESTS                                  ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; tests P1
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;;;;;;;;; tests P1;;;;;;;;;;;;;;;
 ;;; tests for get
 
 (test (run-val '(local
@@ -51,7 +53,7 @@
 
 
 ;; tests for this
-
+; este test no es necesario
 #;(test (run-val '(local
              [(define Y (class
                           (field x 1)
@@ -67,6 +69,22 @@
 
 
 ;; test class with 2 methods
+(test (run-val '(local
+             [(define Add-x (class
+                          (field x 1)
+                          (method add-x (y) (+  (get this x) y))
+                          (method identidad (x) x)))
+              (define a (new Add-x))] (send a add-x (send a identidad 2)))) 3)
+
+
+(test (run-val '(local
+             [(define Swap (class
+                          (field x 4)
+                          (field y 2)
+                          (method swap (x) (set this y x))
+                          (method swap-aux (x) (seqn (set this x y) x))))
+              (define s (new Swap))] (seqn (send s swap (send s swap-aux (get s x))) (get s y)))) 4)
+
 
 (test (run-val '(local
              [(define O (class
@@ -83,6 +101,7 @@
                           (method swap () (set this x (get this y)))
                           (method identidad () (get this x))))
               (define o1 (new O))]  (seqn (send o1 swap) (get o1 x)))) 2)
+
 
 ;;; tests for send
 
@@ -177,3 +196,7 @@
                                 (field x 2) 
                                 (method m () (get this x))))))
 2)
+
+;;; testeo de errores
+
+

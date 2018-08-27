@@ -158,7 +158,7 @@ Este método no crea un nuevo ambiente.
                              (parse t)
                              (parse f))]
     [(list 'class member ...) (my-class (map parse-member member)) ]
-    [(list 'new o) (my-new o)]
+    [(list 'new o) (my-new (parse o))]
     [(list 'set expr1 id expr2) (my-set (parse expr1) id (parse expr2))]
     [(list 'get e id) (my-get (parse e) id)]
     [(list 'send ob message expr2 ...) (my-send (parse ob) message (map parse expr2))]
@@ -211,7 +211,7 @@ Este método no crea un nuevo ambiente.
     
     [(my-send objc m expr)((obj-class (interp objc env)) 'invoke (interp objc env) m
                                                        (map (λ (e) (interp e env)) expr))]
-    [(my-new o) ((env-lookup o env) 'create)]
+    [(my-new o) ((interp o env) 'create)]
     
     [(my-class members) (def (group fields methods)
                      (separate-members members '() '() ))
