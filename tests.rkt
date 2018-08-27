@@ -60,14 +60,21 @@
 
 
 (test (run-val '(local
+               [(define printer (class
+                          (method print () 1)))
+              (define pr (new printer))] (send pr printer))) 1)
+
+
+
+(test (run-val '(local
              [(define O (class
                           (field x 1)
                           (method identidad (x) x)))
               (define o (new O))] (send o identidad 1))) 1)
 
 (test (run-val '(local
-               [(define printer (class
-                          (method print () 1)))
-              (define pr (new printer))] (send pr printer))) 1)
-
+             [(define O (class
+                          (field x 1)
+                          (method identidad (x y) x)))
+              (define o (new O))] (send o identidad 1 2))) 1)
 

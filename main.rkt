@@ -158,9 +158,9 @@ Este método no crea un nuevo ambiente.
                              (parse f))]
     [(list 'class member ...) (my-class (map parse-member member)) ]
     [(list 'new o) (my-new o)]
-    [(list 'set expr1 id expr2) (my-set (parse expr1) id expr2)]
+    [(list 'set expr1 id expr2) (my-set (parse expr1) id (parse expr2))]
     [(list 'get e id) (my-get (parse e) id)]
-    [(list 'send expr1 id expr2 ...) (my-send expr1 id (map parse expr2))]
+    [(list 'send expr1 id expr2 ...) (displayln expr2) (my-send expr1 id (map parse expr2))]
     [(list 'seqn e1 e2) (seqn (parse e1) (parse e2))]    
     [(list 'local (list e ...)  b)
      (lcal (map parse-def e) (parse b))]
@@ -196,7 +196,7 @@ Este método no crea un nuevo ambiente.
     
     [(my-get objc field) ((obj-class (interp objc env)) 'read (interp objc env) field) ]
     
-    [(my-send objc m expr)((obj-class (env-lookup objc env)) 'invoke objc 'm
+    [(my-send objc m expr)(displayln expr)((obj-class (env-lookup objc env)) 'invoke objc 'm
                                                        (map (λ (e) (interp e env)) expr))]
     [(my-new o) ((env-lookup o env) 'create)]
     
@@ -214,10 +214,13 @@ Este método no crea un nuevo ambiente.
                                     [(write)
                                      (dict-set! (obj-values (first vals)) (second vals) (third vals))]
                                     [(invoke)
-                                     (displayln (first vals))
+                                     ;(displayln (first vals))
+                                   
                                      (if (assoc (second vals) methods)
-                                          (interp (apply (cdr (assoc (second vals) methods)) (cddr vals))
-                                                   (multi-extend-env (list 'this) (list (first vals)) env))
+                                          (match  (cdr (assoc (second vals) methods))
+                                            [(list params body)(displayln (cddr vals))(interp body
+                                             (multi-extend-env (append (list 'this) params)
+                                                               (append(list (first vals)) (car(cddr vals))) env))])
                                          (error "message not understood"))]))])
                          class)
 
@@ -239,7 +242,7 @@ Este método no crea un nuevo ambiente.
     [(list head tail ...)
      (match head
        [(fld id body) (separate-members tail (cons (cons id body) acc_f) acc_m) ]
-       [(mthd m params body) (separate-members tail acc_f (append (list (cons 'm (λ params body))) acc_m))])
+       [(mthd m params body) (separate-members tail acc_f (append (list (cons 'm (list params body))) acc_m))])
      ]))
 
 ;; open-val :: Val -> Scheme Value
