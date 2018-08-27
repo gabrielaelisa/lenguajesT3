@@ -135,6 +135,12 @@ Este método no crea un nuevo ambiente.
 
 ;; parse :: s-expr -> Expr
 (define (parse s-expr)
+  
+    (define Object
+  (λ (msg . vals)
+    (case msg
+      [(lookup) (error "method not found")]
+      [else     (error "root class: should not happen: " msg)])))
    ;; parse-member:: s-expr-> Member
   (define (parse-member s-expr)
     (match s-expr
@@ -158,7 +164,7 @@ Este método no crea un nuevo ambiente.
                              (parse t)
                              (parse f))]
     [(list 'class '<: sc-name member ...) (my-class sc-name (map parse-member member))]
-    [(list 'class member ...) (my-class 'Object (map parse-member member)) ]
+    [(list 'class member ...) (my-class Object (map parse-member member)) ]
     [(list 'new o) (my-new (parse o))]
     [(list 'set expr1 id expr2) (my-set (parse expr1) id (parse expr2))]
     [(list 'get e id) (my-get (parse e) id)]
@@ -177,12 +183,6 @@ Este método no crea un nuevo ambiente.
 
 ;; interp :: Expr Env -> Val
 (define (interp expr env)
-  
-  (define Object
-  (λ (msg . vals)
-    (case msg
-      [(lookup) (error "method not found")]
-      [else     (error "root class: should not happen: " msg)])))
 
   ;;separate-members:: list<Member> '() '() -> (Group list<fld> list<mthd>)
   (define (separate-members mem acc_f acc_m)
@@ -241,16 +241,31 @@ Este método no crea un nuevo ambiente.
                                     
                                     [(write)
                                      (dict-set! (obj-values (first vals)) (second vals) (third vals))]
+                                    
                                     [(invoke)
-                                     (if (assoc (second vals) methods)
+                                      (let ((method (class 'lookup (second vals))))
+                                        (match method
+                                         [(list params body)(interp body
+                                            (multi-extend-env (append (list 'this) params)
+                                             (append(list (first vals)) (car(cddr vals))) env))]))]
+                                      
+                                     #;(if (assoc (second vals) methods)
                                           (match  (cdr (assoc (second vals) methods))
                                             [(list params body)(interp body
                                              (multi-extend-env (append (list 'this) params)
                                                                (append(list (first vals)) (car(cddr vals))) env))])
-                                         (error "method not found"))]))])
-                         class)
+                                         (error "method not found"))
 
-                    ]
+                                     ;]
+
+                                    [(lookup)
+                                     (let ([found (assoc (first vals) methods)])
+                                       ;(displayln found)
+                                       (if found
+                                           (cdr found)
+                                           (sc 'lookup (first vals))))]
+                                    ))])
+                         class)]
     [(lcal defs body)
      (let* ([new-env (multi-extend-env '() '() env)])
        (for-each (λ(x)
