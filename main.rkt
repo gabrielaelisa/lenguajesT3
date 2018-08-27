@@ -179,6 +179,7 @@ Este método no crea un nuevo ambiente.
 
 
 ;; interp :: Expr Env -> Val
+;;interpreta una expresion dada 
 (define (interp expr env)
 
   ;;separate-members:: list<Member> '() '() -> (Group list<fld> list<mthd>)
@@ -209,10 +210,13 @@ Este método no crea un nuevo ambiente.
     
     [(my-this) (interp (id 'this) env)]
     
-    [(my-set objc field val) ((obj-class (interp objc env))
-                                               'write (interp objc env) field (closureV val env))]
+    [(my-set o field val) ((obj-class (interp o env))
+                                               'write (interp o env) field (closureV val env))]
     
-    [(my-get objc field) ((obj-class (interp objc env)) 'read (interp objc env) field)]
+    [(my-get o field)(match (interp o env)
+                          [(obj class values)((obj-class (interp o env)) 'read (interp o env) field)]
+                          [_((interp o env) 'read ((interp o env) 'create) field)]
+                          )]
 
     [(my-super m expr) (def superclass (interp (id 'super) env))
                          (superclass  'invoke superclass m

@@ -289,7 +289,20 @@
           (send o g))) 11)
 
 
-(test (run-val '(local
+;sin shadowing
+(test/exn (run-val '(local
+          [(define c2 (class
+                          (field x 7)
+                          (method h () (get this x))))
+           (define c1 (class <: c2
+                        (method f () #f)))
+           (define c (class <: c1                       
+                       (method g () (super h ))))
+           (define o (new c))]
+          (send o g))) "field not found")
+
+;con shadowing
+#;(test (run-val '(local
           [(define c2 (class
                           (field x 7)
                           (method h () (get this x))))
@@ -299,5 +312,3 @@
                        (method g () (super h ))))
            (define o (new c))]
           (send o g))) 7)
-
-
