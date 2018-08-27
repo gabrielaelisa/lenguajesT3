@@ -136,11 +136,6 @@ Este método no crea un nuevo ambiente.
 ;; parse :: s-expr -> Expr
 (define (parse s-expr)
   
-    (define Object
-  (λ (msg . vals)
-    (case msg
-      [(lookup) (error "method not found")]
-      [else     (error "root class: should not happen: " msg)])))
    ;; parse-member:: s-expr-> Member
   (define (parse-member s-expr)
     (match s-expr
@@ -163,8 +158,8 @@ Este método no crea un nuevo ambiente.
     [(list 'if c t f) (my-if (parse c)
                              (parse t)
                              (parse f))]
-    [(list 'class '<: sc-name member ...) (my-class sc-name (map parse-member member))]
-    [(list 'class member ...) (my-class Object (map parse-member member)) ]
+    [(list 'class '<: sc-name member ...) (my-class (parse sc-name) (map parse-member member))]
+    [(list 'class member ...) (my-class (id 'Object) (map parse-member member)) ]
     [(list 'new o) (my-new (parse o))]
     [(list 'set expr1 id expr2) (my-set (parse expr1) id (parse expr2))]
     [(list 'get e id) (my-get (parse e) id)]
@@ -223,6 +218,7 @@ Este método no crea un nuevo ambiente.
     
     [(my-class sc members) (def (group fields methods)
                      (separate-members members '() '() ))
+                      (def my-sc (interp sc env))
                        (letrec
                            ([class
                                 (λ (msg . vals)
@@ -249,21 +245,14 @@ Este método no crea un nuevo ambiente.
                                             (multi-extend-env (append (list 'this) params)
                                              (append(list (first vals)) (car(cddr vals))) env))]))]
                                       
-                                     #;(if (assoc (second vals) methods)
-                                          (match  (cdr (assoc (second vals) methods))
-                                            [(list params body)(interp body
-                                             (multi-extend-env (append (list 'this) params)
-                                                               (append(list (first vals)) (car(cddr vals))) env))])
-                                         (error "method not found"))
-
-                                     ;]
+          
 
                                     [(lookup)
                                      (let ([found (assoc (first vals) methods)])
                                        ;(displayln found)
                                        (if found
                                            (cdr found)
-                                           (sc 'lookup (first vals))))]
+                                           (my-sc 'lookup (first vals))))]
                                     ))])
                          class)]
     [(lcal defs body)
@@ -308,7 +297,13 @@ Versión alternativa de run, que retorna valores de scheme para primitivas y
 valores de MiniScheme para clases y objetos
 |#
 (define (run-val s-expr)
-  (define val (interp (parse s-expr) empty-env))
+  (define val (interp (parse s-expr)
+                      (extend-frame-env! 'Object
+                                         (λ (msg . vals)
+                                           (case msg
+                                             [(lookup) (error "method not found")]
+                                             [else     (error "root class: should not happen: " msg)]))
+                      empty-env)))
   (match val
     [(numV n) n]
     [(boolV b) b]
