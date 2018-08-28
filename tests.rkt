@@ -273,7 +273,7 @@
 
 
 ;funciona sin field shadowing
-#;(test (run-val '(local
+(test (run-val '(local
               [(define c1 (class
                               (field x 3)
                               (method f () (get this x))))
@@ -296,20 +296,22 @@
            (define o (new c))]
           (send o g))) 11)
 
+;super a padre directo
+(test (run-val '(local
+              [(define A
+                 (class
+                     (method apply (c)
+                             (send (new c) m))))
+              (define B
+                 (class <: A                       
+                       (method g (c) (super apply c))))
+               (define ins (new B))]
+              (send ins apply (class
+                                (field x 2) 
+                                (method m () (get this x)))))) 2)
 
-;sin shadowing
-#;(test/exn (run-val '(local
-          [(define c2 (class
-                          (field x 7)
-                          (method h () (get this x))))
-           (define c1 (class <: c2
-                        (method f () #f)))
-           (define c (class <: c1                       
-                       (method g () (super h ))))
-           (define o (new c))]
-          (send o g))) "field not found")
 
-;con shadowing
+;herencia de fields
 (test (run-val '(local
           [(define c2 (class
                           (field x 7)
@@ -320,3 +322,15 @@
                        (method g () (super h ))))
            (define o (new c))]
           (send o g))) 7)
+
+; otros caso
+(test (run-val '(local
+          [(define c2 (class
+                          (field x 7)
+                          (method h (x y) (* y x))))
+           (define c1 (class <: c2
+                        (method f () #f)))
+           (define c (class <: c1                       
+                       (method g () (super h 1 2 ))))
+           (define o (new c))]
+          (send o g))) 2)

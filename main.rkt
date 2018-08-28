@@ -74,7 +74,7 @@
 ;;;auxiliary type
 (deftype Group
   (group flds mthds))
-
+;struc<obj>: function x(pair)
 (define-struct obj (class values))
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -135,6 +135,7 @@ Este método no crea un nuevo ambiente.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; parse :: s-expr -> Expr
+;; parsea una s-expr
 (define (parse s-expr)
   
    ;; parse-member:: s-expr-> Member
@@ -181,7 +182,17 @@ Este método no crea un nuevo ambiente.
 ;; interp :: Expr Env -> Val
 ;;interpreta una expresion dada 
 (define (interp expr env)
+  
+ ;entrega la última aparicion en el ambiente
+ (define (get-last x acc env)
+   (match env
+    [(mtEnv) acc]
+    [(aEnv hash rest)
+     (if (hash-has-key? hash x)
+         (get-last x (hash-ref hash x) rest)
+         (get-last x acc rest))]))
 
+  
   ;;separate-members:: list<Member> '() '() -> (Group list<fld> list<mthd>)
   (define (separate-members mem acc_f acc_m)
     (match mem
@@ -208,7 +219,7 @@ Este método no crea un nuevo ambiente.
                           (interp expr1 env)
                           (interp expr2 env))]
     
-    [(my-this) (interp (id 'this) env)]
+    [(my-this) (get-last 'this '() env)]
     
     [(my-set o field val) ((obj-class (interp o env))
                                                'write (interp o env) field (closureV val env))]
@@ -260,7 +271,6 @@ Este método no crea un nuevo ambiente.
                                             (multi-extend-env (append (list 'this 'super) params)
                                              (append(list (first vals) my-sc) (car(cddr vals))) env))]))]
                                       
-          
                                     [(lookup)
                                      (let ([found (assoc (first vals) methods)])
                                        ;(displayln found)
