@@ -227,9 +227,11 @@ Este método no crea un nuevo ambiente.
                                                        (map (λ (e) (interp e env)) expr))]
     [(my-new o) ((interp o env) 'create)]
     
-    [(my-class sc members) (def (group fields methods)
+    [(my-class sc members) (def (group flds methods)
                      (separate-members members '() '() ))
                       (def my-sc (interp sc env))
+                      (def sclass (my-sc 'create))
+                      (def fields (cons (cons sc 'all-fields) flds))
                        (letrec
                            ([class
                                 (λ (msg . vals)
@@ -237,14 +239,16 @@ Este método no crea un nuevo ambiente.
                                     [(create)
                                      (make-obj class
                                                (make-hash fields))]
+                                    
                                     [(read)
-                                     (let
+                                    (let
                                      ([dict (obj-values (first vals))]) 
                                      (if (hash-has-key? dict (second vals))
                                      (match (dict-ref dict (second vals))
                                        [(closureV val my-env) (interp val my-env)]
                                        [ some (interp some env)])
-                                     (error "field not found")))]
+                                     (my-sc 'read sclass (second vals))) )]
+                                     
                                     
                                     [(write)
                                      (dict-set! (obj-values (first vals)) (second vals) (third vals))]
@@ -257,7 +261,6 @@ Este método no crea un nuevo ambiente.
                                              (append(list (first vals) my-sc) (car(cddr vals))) env))]))]
                                       
           
-
                                     [(lookup)
                                      (let ([found (assoc (first vals) methods)])
                                        ;(displayln found)
@@ -312,7 +315,11 @@ valores de MiniScheme para clases y objetos
                       (extend-frame-env! 'Object
                                          (λ (msg . vals)
                                            (case msg
+                                             [(all-fields) '()]
+                                             [(lookup-field)(error "field not found")]
+                                             [(read) (error "field not found")]
                                              [(lookup) (error "method not found")]
+                                             [(create) '()]
                                              [else     (error "root class: should not happen: " msg)]))
                       empty-env)))
   (match val

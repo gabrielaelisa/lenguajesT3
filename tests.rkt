@@ -242,6 +242,14 @@
                (define o (new c))]
               (send o f 20))) #f)
 
+;testing herencia de fields
+
+(test (run-val '(local
+              [(define c1 (class
+                              (field x 10)))
+               (define c (class <: c1))
+               (define o (new c))]
+              (get o x))) 10)
 ; otros testings
 
 (test (run-val '(local
@@ -290,7 +298,7 @@
 
 
 ;sin shadowing
-(test/exn (run-val '(local
+#;(test/exn (run-val '(local
           [(define c2 (class
                           (field x 7)
                           (method h () (get this x))))
@@ -302,7 +310,7 @@
           (send o g))) "field not found")
 
 ;con shadowing
-#;(test (run-val '(local
+(test (run-val '(local
           [(define c2 (class
                           (field x 7)
                           (method h () (get this x))))
